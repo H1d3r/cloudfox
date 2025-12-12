@@ -244,34 +244,64 @@ func GetEnabledRegions(awsProfile string, version string, AwsMfaToken string) []
 
 }
 
+// SplitLevelHook is a custom logrus hook that splits logs by level
+// Error and Fatal messages go to errorWriter, everything else goes to infoWriter
+type SplitLevelHook struct {
+	errorWriter io.Writer
+	infoWriter  io.Writer
+	formatter   logrus.Formatter
+}
+
+func (h *SplitLevelHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *SplitLevelHook) Fire(entry *logrus.Entry) error {
+	line, err := h.formatter.Format(entry)
+	if err != nil {
+		return err
+	}
+
+	switch entry.Level {
+	case logrus.ErrorLevel, logrus.FatalLevel, logrus.PanicLevel:
+		_, err = h.errorWriter.Write(line)
+	default:
+		_, err = h.infoWriter.Write(line)
+	}
+	return err
+}
+
 // txtLogger - Returns the txt logger
 func TxtLogger() *logrus.Logger {
-	var txtFile *os.File
-	var err error
 	txtLogger := logrus.New()
 
-	// Open the main log file (captures all log levels)
-	txtFile, err = os.OpenFile(fmt.Sprintf("%s/cloudfox-error.log", ptr.ToString(GetLogDirPath())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Open error log file (only errors and fatal messages)
+	errorFile, err := os.OpenFile(fmt.Sprintf("%s/cloudfox-error.log", ptr.ToString(GetLogDirPath())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		txtFile, err = os.OpenFile(fmt.Sprintf("./cloudfox-error.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		errorFile, err = os.OpenFile(fmt.Sprintf("./cloudfox-error.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	}
 	if err != nil {
-		panic(fmt.Sprintf("Failed to open log file %v", err))
+		panic(fmt.Sprintf("Failed to open error log file %v", err))
 	}
 
-	// Create a MultiWriter to write to both error.log and info.log
+	// Open info log file (all non-error messages)
 	infoFile, err := os.OpenFile(fmt.Sprintf("%s/cloudfox-info.log", ptr.ToString(GetLogDirPath())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		infoFile, err = os.OpenFile(fmt.Sprintf("./cloudfox-info.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	}
-
-	if err == nil {
-		// Write to both files
-		txtLogger.Out = io.MultiWriter(txtFile, infoFile)
-	} else {
-		// If we can't open info.log, just write to error.log
-		txtLogger.Out = txtFile
+	if err != nil {
+		panic(fmt.Sprintf("Failed to open info log file %v", err))
 	}
+
+	// Discard default output since we're using hooks
+	txtLogger.SetOutput(io.Discard)
+
+	// Add custom hook to split logs by level
+	txtLogger.AddHook(&SplitLevelHook{
+		errorWriter: errorFile,
+		infoWriter:  infoFile,
+		formatter:   &logrus.TextFormatter{},
+	})
 
 	txtLogger.SetLevel(logrus.InfoLevel)
 	//txtLogger.SetReportCaller(true)
