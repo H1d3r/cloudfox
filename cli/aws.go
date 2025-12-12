@@ -4,7 +4,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -526,7 +525,7 @@ var (
 func initAWSProfiles() {
 	// Ensure only one profile setting is chosen
 	if AWSProfile != "" && AWSProfilesList != "" || AWSProfile != "" && AWSAllProfiles || AWSProfilesList != "" && AWSAllProfiles {
-		log.Fatalf("[-] Error specifying AWS profiles. Choose only one of -p/--profile, -a/--all-profiles, -l/--profiles-list")
+		internal.TxtLog.Fatalf("[-] Error specifying AWS profiles. Choose only one of -p/--profile, -a/--all-profiles, -l/--profiles-list")
 	} else if AWSProfile != "" {
 		AWSProfiles = append(AWSProfiles, AWSProfile)
 	} else if AWSProfilesList != "" {
@@ -613,11 +612,11 @@ func awsPostRun(cmd *cobra.Command, args []string) {
 		outputDirectory := filepath.Join(AWSOutputDirectory, "cached-data", "aws", ptr.ToString(caller.Account))
 		err = internal.SaveCacheToGobFiles(outputDirectory, *caller.Account)
 		if err != nil {
-			log.Fatalf("failed to save cache: %v", err)
+			internal.TxtLog.Fatalf("failed to save cache: %v", err)
 		}
 		err = internal.SaveCacheToFiles(outputDirectory, *caller.Account)
 		if err != nil {
-			log.Fatalf("failed to save cache: %v", err)
+			internal.TxtLog.Fatalf("failed to save cache: %v", err)
 		}
 
 		fmt.Printf("[%s][%s] Cached AWS data written to %s\n", cyan(emoji.Sprintf(":fox:cloudfox v%s :fox:", cmd.Root().Version)), cyan(profile), outputDirectory)

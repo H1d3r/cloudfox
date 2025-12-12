@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -548,7 +547,7 @@ func (m *InstancesModule) loadInstanceData(instance types.Instance, region strin
 		// Describe the IAM instance profile
 		profileOutput, err := sdk.CachedIamGetInstanceProfile(m.IAMClient, aws.ToString(m.Caller.Account), profileName)
 		if err != nil {
-			log.Printf("failed to get instance profile for %s, %v", profileArn, err)
+			m.modLog.Errorf("failed to get instance profile for %s, %v", profileArn, err)
 		}
 
 		for _, role := range profileOutput.Roles {

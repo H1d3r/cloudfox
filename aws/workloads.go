@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"fmt"
-	"log"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -350,7 +349,7 @@ func (m *WorkloadsModule) getEC2WorkloadsPerRegion(r string, wg *sync.WaitGroup,
 			// Describe the IAM instance profile
 			profileOutput, err := sdk.CachedIamGetInstanceProfile(m.IAMClient, aws.ToString(m.Caller.Account), profileName)
 			if err != nil {
-				log.Printf("failed to get instance profile for %s, %v", profileArn, err)
+				m.modLog.Errorf("failed to get instance profile for %s, %v", profileArn, err)
 				continue
 			}
 

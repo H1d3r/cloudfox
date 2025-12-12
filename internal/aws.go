@@ -244,6 +244,46 @@ func GetEnabledRegions(awsProfile string, version string, AwsMfaToken string) []
 
 }
 
+// ModuleFirstFormatter formats logs with module field before the message
+type ModuleFirstFormatter struct {
+	logrus.TextFormatter
+}
+
+func (f *ModuleFirstFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	// Use the standard text formatter to get the base format
+	formatted, err := f.TextFormatter.Format(entry)
+	if err != nil {
+		return nil, err
+	}
+
+	// If there's a module field, reformat to put it before msg
+	if module, ok := entry.Data["module"]; ok {
+		// Parse the formatted output and rebuild with module first
+		str := string(formatted)
+
+		// Find and extract the module field
+		moduleStr := fmt.Sprintf("module=%v", module)
+
+		// If the formatted string contains the module field, move it before msg=
+		if idx := strings.Index(str, moduleStr); idx > 0 {
+			// Remove module from its current position
+			before := str[:idx]
+			after := str[idx+len(moduleStr):]
+			// Trim any extra space that might be left
+			after = strings.TrimPrefix(after, " ")
+
+			// Find where msg= starts
+			if msgIdx := strings.Index(before, "msg="); msgIdx > 0 {
+				// Rebuild: everything before msg, then module, then msg and after
+				newStr := before[:msgIdx] + moduleStr + " " + before[msgIdx:] + after
+				return []byte(newStr), nil
+			}
+		}
+	}
+
+	return formatted, nil
+}
+
 // SplitLevelHook is a custom logrus hook that splits logs by level
 // Error and Fatal messages go to errorWriter, everything else goes to infoWriter
 type SplitLevelHook struct {
@@ -300,7 +340,7 @@ func TxtLogger() *logrus.Logger {
 	txtLogger.AddHook(&SplitLevelHook{
 		errorWriter: errorFile,
 		infoWriter:  infoFile,
-		formatter:   &logrus.TextFormatter{},
+		formatter:   &ModuleFirstFormatter{},
 	})
 
 	txtLogger.SetLevel(logrus.InfoLevel)
