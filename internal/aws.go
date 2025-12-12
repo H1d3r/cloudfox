@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -248,6 +249,8 @@ func TxtLogger() *logrus.Logger {
 	var txtFile *os.File
 	var err error
 	txtLogger := logrus.New()
+
+	// Open the main log file (captures all log levels)
 	txtFile, err = os.OpenFile(fmt.Sprintf("%s/cloudfox-error.log", ptr.ToString(GetLogDirPath())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		txtFile, err = os.OpenFile(fmt.Sprintf("./cloudfox-error.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -255,7 +258,21 @@ func TxtLogger() *logrus.Logger {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to open log file %v", err))
 	}
-	txtLogger.Out = txtFile
+
+	// Create a MultiWriter to write to both error.log and info.log
+	infoFile, err := os.OpenFile(fmt.Sprintf("%s/cloudfox-info.log", ptr.ToString(GetLogDirPath())), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		infoFile, err = os.OpenFile(fmt.Sprintf("./cloudfox-info.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	}
+
+	if err == nil {
+		// Write to both files
+		txtLogger.Out = io.MultiWriter(txtFile, infoFile)
+	} else {
+		// If we can't open info.log, just write to error.log
+		txtLogger.Out = txtFile
+	}
+
 	txtLogger.SetLevel(logrus.InfoLevel)
 	//txtLogger.SetReportCaller(true)
 

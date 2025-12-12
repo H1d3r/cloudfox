@@ -90,6 +90,7 @@ type Inventory2Module struct {
 	Goroutines int
 	AWSProfile string
 	WrapTable  bool
+	ServiceMap *awsservicemap.AwsServiceMap // Shared service map to avoid repeated HTTP requests
 
 	// Main module data
 	RegionResourceCount  int
@@ -423,8 +424,12 @@ func (m *Inventory2Module) Receiver(receiver chan GlobalResourceCount2, receiver
 func (m *Inventory2Module) executeChecks(r string, wg *sync.WaitGroup, semaphore chan struct{}, dataReceiver chan GlobalResourceCount2) {
 	defer wg.Done()
 
-	servicemap := &awsservicemap.AwsServiceMap{
-		JsonFileSource: "DOWNLOAD_FROM_AWS",
+	// Use shared ServiceMap instance if provided, otherwise create a new one
+	servicemap := m.ServiceMap
+	if servicemap == nil {
+		servicemap = &awsservicemap.AwsServiceMap{
+			JsonFileSource: "DOWNLOAD_FROM_AWS",
+		}
 	}
 
 	// AppRunner is not supported in the aws service region catalog so we have to run it in all regions
