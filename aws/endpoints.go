@@ -333,7 +333,7 @@ func (m *EndpointsModule) executeChecks(r string, wg *sync.WaitGroup, semaphore 
 		wg.Add(1)
 		go m.getELBListenersPerRegion(r, wg, semaphore, dataReceiver)
 	}
-	res, err = servicemap.IsServiceInRegion("apigateway", r)
+	res, err = servicemap.IsServiceInRegion("api-gateway", r)
 	if err != nil {
 		m.modLog.Error(err)
 	}

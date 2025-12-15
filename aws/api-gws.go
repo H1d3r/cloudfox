@@ -186,7 +186,7 @@ func (m *ApiGwModule) executeChecks(r string, wg *sync.WaitGroup, semaphore chan
 			JsonFileSource: "DOWNLOAD_FROM_AWS",
 		}
 	}
-	res, err := servicemap.IsServiceInRegion("apigateway", r)
+	res, err := servicemap.IsServiceInRegion("api-gateway", r)
 	if err != nil {
 		m.modLog.Error(err)
 	}

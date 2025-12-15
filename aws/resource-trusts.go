@@ -305,7 +305,7 @@ func (m *ResourceTrustsModule) executeChecks(r string, wg *sync.WaitGroup, semap
 	}
 
 	if m.APIGatewayClient != nil {
-		res, err = servicemap.IsServiceInRegion("apigateway", r)
+		res, err = servicemap.IsServiceInRegion("api-gateway", r)
 		if err != nil {
 			m.modLog.Error(err)
 		}

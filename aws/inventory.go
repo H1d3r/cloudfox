@@ -437,7 +437,7 @@ func (m *Inventory2Module) executeChecks(r string, wg *sync.WaitGroup, semaphore
 	wg.Add(1)
 	go m.getAppRunnerServicesPerRegion(r, wg, semaphore)
 
-	res, err := servicemap.IsServiceInRegion("apigateway", r)
+	res, err := servicemap.IsServiceInRegion("api-gateway", r)
 	if err != nil {
 		m.modLog.Error(err)
 	}
